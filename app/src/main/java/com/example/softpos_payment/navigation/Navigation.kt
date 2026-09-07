@@ -2,23 +2,23 @@ package com.example.softpos_payment.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.softpos_payment.screens.AmountEntryScreen
 import com.example.softpos_payment.screens.PaymentConfirmation
+import com.example.softpos_payment.viewmodel.PaymentViewModel
 
 @Composable
-fun Navigation() {
+fun Navigation(
+    paymentViewModel: PaymentViewModel = viewModel()
+) {
 
     val navController = rememberNavController()
 
-    var amount by rememberSaveable {
-        mutableStateOf("")
-    }
+    val amount by paymentViewModel.amount.collectAsState()
 
     NavHost(
         navController = navController,
@@ -28,26 +28,23 @@ fun Navigation() {
         composable("home") {
 
             AmountEntryScreen(
+
                 amount = amount,
 
-                onAmountChange = {
-                    amount = it
+                onAmountChange = { newAmount ->
+                    paymentViewModel.updateAmount(newAmount)
                 },
 
                 onProceedClick = {
-                    navController.navigate("confirm/$amount")
+                    navController.navigate("confirm")
                 }
             )
         }
 
-        composable("confirm/{amount}") { backStackEntry ->
-
-            val amount =
-                backStackEntry.arguments
-                    ?.getString("amount")
-                    .orEmpty()
+        composable("confirm") {
 
             PaymentConfirmation(
+
                 amount = amount,
 
                 onBackClick = {
