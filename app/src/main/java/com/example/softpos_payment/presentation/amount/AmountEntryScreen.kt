@@ -35,13 +35,18 @@ fun AmountEntryScreen(
     val uiState by viewModel.uiState
         .collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.paymentResult) {
+    /*
+     * Navigate when payment becomes successful.
+     */
+    LaunchedEffect(uiState.paymentState) {
 
-        val result = uiState.paymentResult
+        val paymentState = uiState.paymentState
 
-        if (result is PaymentResult.Success) {
+        if (paymentState is PaymentState.Success) {
 
-            onPaymentSuccess(result)
+            onPaymentSuccess(
+                paymentState.paymentResult
+            )
 
             viewModel.onIntent(
                 AmountEntryIntent.OnPaymentSuccessConsumed
@@ -49,12 +54,28 @@ fun AmountEntryScreen(
         }
     }
 
+    /*
+     * Get error message if current state is Error.
+     */
+    val errorMessage =
+        (uiState.paymentState as? PaymentState.Error)?.message
+
+    /*
+     * Check if payment is currently loading.
+     */
+    val isLoading =
+        uiState.paymentState is PaymentState.Loading
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+
+        horizontalAlignment =
+            Alignment.CenterHorizontally,
+
+        verticalArrangement =
+            Arrangement.Center
     ) {
 
         Text(
@@ -110,7 +131,7 @@ fun AmountEntryScreen(
                 keyboardType = KeyboardType.Decimal
             ),
 
-            isError = uiState.errorMessage != null
+            isError = errorMessage != null
         )
 
         Spacer(
@@ -127,15 +148,16 @@ fun AmountEntryScreen(
 
             enabled =
                 uiState.isAmountValid &&
-                        !uiState.isLoading,
+                        !isLoading,
 
             modifier = Modifier.fillMaxWidth()
         ) {
 
-            if (uiState.isLoading) {
+            if (isLoading) {
 
                 CircularProgressIndicator(
-                    modifier = Modifier.height(20.dp),
+                    modifier = Modifier
+                        .height(20.dp),
                     color = MaterialTheme.colorScheme.onPrimary
                 )
 
@@ -144,22 +166,12 @@ fun AmountEntryScreen(
                 Text("Proceed")
             }
         }
-
-        if (uiState.errorMessage != null) {
-
-            Spacer(
-                modifier = Modifier.height(16.dp)
-            )
-
-            Text(
-                text = uiState.errorMessage!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
     }
 
-    if (uiState.errorMessage != null) {
+    /*
+     * Error state
+     */
+    if (uiState.paymentState is PaymentState.Error) {
 
         AlertDialog(
 
@@ -174,7 +186,10 @@ fun AmountEntryScreen(
             },
 
             text = {
-                Text(uiState.errorMessage!!)
+                Text(
+                    text = errorMessage
+                        ?: "Something went wrong."
+                )
             },
 
             confirmButton = {
@@ -192,3 +207,4 @@ fun AmountEntryScreen(
         )
     }
 }
+

@@ -36,7 +36,8 @@ class PaymentRepositoryImpl @Inject constructor(
                             "Empty response from server."
                         )
 
-                    } else if (
+                    }
+                    else if (
                         body.status.equals(
                             "APPROVED",
                             ignoreCase = true
@@ -50,12 +51,16 @@ class PaymentRepositoryImpl @Inject constructor(
                             timestamp = body.timestamp.orEmpty()
                         )
 
-                    } else {
-
-                        /*
-                         * HTTP 200 but payment was not approved.
-                         * Use the message returned by the API.
-                         */
+                    }
+                    else if( body.status.equals(
+                            "DECLINED",
+                            ignoreCase = true
+                        )){
+                        PaymentResult.Failure(
+                            message = body.message.orEmpty()
+                        )
+                    }
+                    else {
                         PaymentResult.Failure(
                             body.message.orEmpty()
                         )
@@ -63,10 +68,7 @@ class PaymentRepositoryImpl @Inject constructor(
 
                 } else {
 
-                    /*
-                     * HTTP error.
-                     * Try to extract the message returned by the API.
-                     */
+
                     val errorBody =
                         response.errorBody()?.string()
 

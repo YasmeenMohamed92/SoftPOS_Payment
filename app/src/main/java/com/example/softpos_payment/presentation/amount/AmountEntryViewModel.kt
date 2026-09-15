@@ -37,13 +37,13 @@ class AmountEntryViewModel @Inject constructor(
 
             AmountEntryIntent.OnErrorDismissed -> {
                 _uiState.value = _uiState.value.copy(
-                    errorMessage = null
+                    paymentState = PaymentState.Idle
                 )
             }
 
             AmountEntryIntent.OnPaymentSuccessConsumed -> {
                 _uiState.value = _uiState.value.copy(
-                    paymentResult = null
+                    paymentState = PaymentState.Idle
                 )
             }
         }
@@ -53,17 +53,13 @@ class AmountEntryViewModel @Inject constructor(
 
         val value = amount.toDoubleOrNull()
 
-        // Negative numbers are invalid.
-        // Zero is allowed to pass validation,
-        // but will be handled in processPayment().
         val isValid =
             value != null && value >= 0.0
 
         _uiState.value = _uiState.value.copy(
             amount = amount,
             isAmountValid = isValid,
-            paymentResult = null,
-            errorMessage = null
+            paymentState = PaymentState.Idle
         )
     }
 
@@ -80,15 +76,15 @@ class AmountEntryViewModel @Inject constructor(
                 ?: return
 
         /*
-         * Hard-coded business validation:
+         * Business validation:
          * Zero amount is not allowed.
          */
         if (amount == 0.0) {
 
             _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                paymentResult = null,
-                errorMessage = "Amount should be more than zero"
+                paymentState = PaymentState.Error(
+                    message = "Amount should be more than zero"
+                )
             )
 
             return
@@ -96,35 +92,47 @@ class AmountEntryViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
 
+
             _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                paymentResult = null,
-                errorMessage = null
+                paymentState = PaymentState.Loading
             )
 
-            val result =
-                processPaymentUseCase(amount)
+            try {
 
-            when (result) {
+                val result =
+                    processPaymentUseCase(amount)
 
-                is PaymentResult.Success -> {
+                when (result) {
 
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        paymentResult = result,
-                        errorMessage = null
-                    )
+                    is PaymentResult.Success -> {
+
+                        _uiState.value = _uiState.value.copy(
+                            paymentState = PaymentState.Success(
+                                paymentResult = result
+                            )
+                        )
+                    }
+
+                    is PaymentResult.Failure -> {
+
+                        _uiState.value = _uiState.value.copy(
+                            paymentState = PaymentState.Error(
+                                message = result.message
+                            )
+                        )
+                    }
                 }
 
-                is PaymentResult.Failure -> {
+            } catch (e: Exception) {
 
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        paymentResult = null,
-                        errorMessage = result.message
+                _uiState.value = _uiState.value.copy(
+                    paymentState = PaymentState.Error(
+                        message = e.message
+                            ?: "Something went wrong. Please try again."
                     )
-                }
+                )
             }
         }
     }
 }
+
