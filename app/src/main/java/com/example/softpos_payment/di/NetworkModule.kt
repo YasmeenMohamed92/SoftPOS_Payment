@@ -100,14 +100,5 @@ object NetworkModule {
         )
     }
 
-    @Provides
-    @Singleton
-    fun providePaymentRepository(
-        paymentApi: PaymentApi
-    ): PaymentRepository {
 
-        return PaymentRepositoryImpl(
-            paymentApi
-        )
-    }
 }

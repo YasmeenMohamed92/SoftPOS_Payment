@@ -16,26 +16,21 @@ import com.example.softpos_payment.presentation.confirmation.PaymentConfirmation
 object Routes {
 
     const val AMOUNT = "amount"
-
     const val CONFIRMATION = "confirmation"
 }
 
 @Composable
-fun Navigation(
-    navController: NavHostController =
-        rememberNavController()
-) {
+fun Navigation() {
+    val navController: NavHostController =
+    rememberNavController()
 
     var paymentResult by remember {
         mutableStateOf<PaymentResult.Success?>(null)
     }
 
     NavHost(
-
         navController = navController,
-
         startDestination = Routes.AMOUNT
-
     ) {
 
         composable(Routes.AMOUNT) {
@@ -62,7 +57,6 @@ fun Navigation(
                     paymentResult = result,
 
                     onBackClick = {
-
                         navController.popBackStack()
                     }
                 )
@@ -70,3 +64,4 @@ fun Navigation(
         }
     }
 }
+
